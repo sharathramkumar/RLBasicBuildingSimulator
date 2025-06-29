@@ -1,0 +1,3 @@
+This repository contains code for a simple RL-friendly building energy management testcase using a single-zone thermal model of a building. It includes the core building and air-conditioner model, as well as training and test environments, and a notebook demonstrating the usage.
+
+The main task of the agent is to adjust the air-conditioner setpoint in the building to respond to real-time electricity prices and a grid-emissions signal, with the objective of meeting the user's desired indoor temperature levels while reducing energy consumption, bills and emissions. The training environment consists of 1 year of data covering weather, grid prices and emissions signals.
