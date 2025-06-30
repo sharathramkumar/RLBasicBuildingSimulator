@@ -33,18 +33,20 @@ def extract_data(
     )
     thermal_model.init_temperatures(df.Tamb_C.to_list(), df.Qirr_W_m2.to_list())
     df_sub = df[start_date:end_date]
+    df_sub["Pelec_W"] = df_sub[f"{model_tag}_W"]
+    df_sub = df_sub.drop(
+        [x for x in df_sub.columns if x.startswith("Pelec") and x != "Pelec_W"], axis=1
+    )
     if return_testcase:
-        return generate_testcase(df_sub, thermal_model, model_tag)
+        return generate_testcase(df_sub, thermal_model)
     return df_sub, thermal_model
 
 
-def generate_testcase(
-    df_sub: pd.DataFrame, thermal_model: ThermalModel4R2C, model_tag: str
-):
+def generate_testcase(df_sub: pd.DataFrame, thermal_model: ThermalModel4R2C):
     return BuildingTestcase(
         tamb_list=df_sub.Tamb_C.to_list(),
         qirr_list=df_sub.Qirr_W_m2.to_list(),
-        pelec_list=df_sub[f"{model_tag}_W"].to_list(),
+        pelec_list=df_sub.Pelec_W.to_list(),
         co2_list=df_sub.CO2_gCO2eq_kWh.to_list(),
         price_list=df_sub.USEP_SGD_MWh.to_list(),
         thermal_model=thermal_model,

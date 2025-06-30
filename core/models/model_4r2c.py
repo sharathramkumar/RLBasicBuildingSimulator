@@ -50,12 +50,14 @@ ModelParams_4RoomApartment_ConcreteWall_100sqm = ModelParams4R2C(
 
 @dataclass
 class SimulationDataTracker:
+    t_set: list[float] = field(default_factory=list)
     t_in: list[float] = field(default_factory=list)
     t_e: list[float] = field(default_factory=list)
     t_ia: list[float] = field(default_factory=list)
     p_ac: list[float] = field(default_factory=list)
 
-    def append(self, _tin, _te, _tia, _pac):
+    def append(self, _tset, _tin, _te, _tia, _pac):
+        self.t_set.append(_tset)
         self.t_in.append(_tin)
         self.t_e.append(_te)
         self.t_ia.append(_tia)
@@ -66,6 +68,7 @@ class SimulationDataTracker:
     ) -> tuple[pd.Series, pd.Series, pd.Series, pd.Series]:
         n_to_skip = max(len(self.t_in) - len(index), 0)
         return (
+            pd.Series(self.t_set[n_to_skip:], index=index),
             pd.Series(self.t_in[n_to_skip:], index=index),
             pd.Series(self.t_e[n_to_skip:], index=index),
             pd.Series(self.t_ia[n_to_skip:], index=index),
@@ -85,6 +88,7 @@ class ThermalModel4R2C:
     ):
         self.params = params
         self.ac = cooling_system
+        self.t_set = self.ac.default_setpoint
         self.t_in = init_t_in
         self.t_e = init_t_e
         self.t_ia = init_t_ia
@@ -95,7 +99,7 @@ class ThermalModel4R2C:
         self.update_history()
 
     def update_history(self):
-        self.history.append(self.t_in, self.t_e, self.t_ia, self.p_ac)
+        self.history.append(self.t_set, self.t_in, self.t_e, self.t_ia, self.p_ac)
 
     def init_temperatures(self, t_amb: list, q_irrad: list):
         # This initializes the thermal models to settle the temperatures
@@ -110,6 +114,7 @@ class ThermalModel4R2C:
     def step(
         self, t_set: float, t_amb: float, q_irrad: float, q_elec: float = 0.0
     ) -> float:
+        self.t_set = t_set
         phi_sol = self.params.f_sol * q_irrad
         t_eq_amb = t_amb + (q_irrad * (0.5 / 25)) * self.params.f_shading
         # Calculate the cooler power and the contributions to different parts

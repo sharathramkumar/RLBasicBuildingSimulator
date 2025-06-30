@@ -1,0 +1,22 @@
+{
+    "state_keys": [
+        "t_in",
+        "t_amb",
+        "q_irr",
+        "curr_price",
+        "curr_co2",
+        "prev_load",
+        "time"
+    ],
+    "action_type": "discrete",
+    "action_space": {
+        "values": [
+            20.0,
+            22.0,
+            24.0,
+            26.0,
+            28.0,
+            30.0
+        ]
+    }
+}

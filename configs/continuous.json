@@ -1,0 +1,18 @@
+{
+    "state_keys": [
+        "t_in",
+        "t_amb",
+        "q_irr",
+        "curr_price",
+        "curr_co2",
+        "prev_load",
+        "time"
+    ],
+    "action_type": "continuous",
+    "action_space": {
+        "range": [
+            20.0,
+            30.0
+        ]
+    }
+}

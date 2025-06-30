@@ -33,10 +33,10 @@ class BuildingTestcase:
         self.total_discomfort = 0.0
 
         # Default preferred indoor temperature
-        self.preferred_temp = 24.0  # deg C
+        self.preferred_temp = self.thermal_model.ac.default_setpoint  # deg C
 
     def run_testcase(self, agent: ControlAgent):
-        prev_pelec = 0.0
+        prev_tot_elec = 0.0
         self.reset()
 
         for t in range(len(self.tamb_list)):
@@ -48,22 +48,24 @@ class BuildingTestcase:
 
             # Agent decides setpoint
             setpoint = agent.get_ac_setpoint(
+                time=(t % 96) / 96.0,
                 t_in=self.thermal_model.t_in,
                 t_amb=tamb,
                 q_irr=qirr,
-                prev_load=prev_pelec,
+                prev_load=prev_tot_elec,
                 curr_price=price,
                 curr_co2=co2,
             )
 
             # Update thermal model
-            ac_cooling_power = self.thermal_model.step(setpoint, tamb, qirr)
+            ac_cooling_power = self.thermal_model.step(setpoint, tamb, qirr, pelec)
 
             # Track metrics
             energy = (pelec + ac_cooling_power) * 0.25 * 1e-3  # kWh
+            temp_deviation = abs(self.thermal_model.t_in - self.preferred_temp) - 0.5
             discomfort = (
-                abs(self.thermal_model.t_in - self.preferred_temp) * 0.25
-            )  # degC-h
+                max(temp_deviation - 1.0, 0) * 0.25
+            )  # degC-h, 1.0 deg tolerance
             emissions = energy * co2 * 1e-3  # kgCO2e (co2 is in gCO2eq_kWh)
             cost = energy * price * 1e-3  # $ (price in $/MWh)
 
@@ -72,7 +74,7 @@ class BuildingTestcase:
             self.total_emissions += emissions
             self.total_cost += cost
 
-            prev_pelec = pelec
+            prev_tot_elec = pelec + ac_cooling_power
 
     def show_metrics(self):
         print("=== Testcase Metrics ===")
