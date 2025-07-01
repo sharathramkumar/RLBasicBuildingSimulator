@@ -1,4 +1,6 @@
 import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 import json
 from ..models.control_models import HysteresisCoolingSystemSpecification
 from ..models.model_4r2c import ThermalModel4R2C, ModelParams4R2C
@@ -51,3 +53,58 @@ def generate_testcase(df_sub: pd.DataFrame, thermal_model: ThermalModel4R2C):
         price_list=df_sub.USEP_SGD_MWh.to_list(),
         thermal_model=thermal_model,
     )
+
+
+def plot_daily_trends(df: pd.DataFrame, ax: plt.Axes = None):
+    """
+    Plot daily mean and std trends of all columns in the given dataframe.
+    Assumes datetime index at 15-minute resolution.
+    """
+    # Ensure datetime index and sort
+    df = df.copy()
+    df = df.sort_index()
+
+    # Reshape each column into (num_days, 96)
+    num_days = len(df) // 96
+    daily_profiles = {
+        col: df[col].values[: num_days * 96].reshape((num_days, 96))
+        for col in df.columns
+    }
+
+    # Compute daily mean and std
+    means = {col: data.mean(axis=0) for col, data in daily_profiles.items()}
+    stds = {col: data.std(axis=0) for col, data in daily_profiles.items()}
+
+    # Setup subplots
+    if ax is None:
+        fig, axs = plt.subplots(2, 2, figsize=(12, 8), sharex=True)
+    else:
+        axs = ax
+
+    axs = axs.flatten()
+    x = np.arange(96)  # Time steps per day
+
+    title_map = {
+        "Tamb_C": "Outdoor Temperature ($^o$C)",
+        "Qirr_W_m2": "Solar Irradiance (W/m$^2^)",
+        "CO2_gCO2eq_kWh": "Emissions Intensity (gCO$_2$eq/kWh)",
+        "USEP_SGD_MWh": "Electricity Price (\$/MWh)",
+    }
+
+    for i, col in enumerate(df.columns):
+        if col.startswith("Pelec"):
+            continue
+        mean = means[col]
+        std = stds[col]
+        axs[i].plot(x, mean, label="Mean")
+        axs[i].fill_between(x, mean - std, mean + std, alpha=0.3, label="±1 Std")
+        axs[i].set_title(title_map[col])
+        axs[i].set_xlim([0, 95])
+        if min(mean - std) < 0:
+            axs[i].set_ylim([0, None])
+        axs[i].set_xlabel("Timestep (15 min)")
+        axs[i].set_ylabel(col)
+        axs[i].grid(True)
+        axs[i].legend()
+
+    plt.tight_layout()
