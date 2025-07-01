@@ -86,7 +86,7 @@ def plot_daily_trends(df: pd.DataFrame, ax: plt.Axes = None):
 
     title_map = {
         "Tamb_C": "Outdoor Temperature ($^o$C)",
-        "Qirr_W_m2": "Solar Irradiance (W/m$^2^)",
+        "Qirr_W_m2": "Solar Irradiance (W/m$^2$)",
         "CO2_gCO2eq_kWh": "Emissions Intensity (gCO$_2$eq/kWh)",
         "USEP_SGD_MWh": "Electricity Price (\$/MWh)",
     }

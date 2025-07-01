@@ -1,5 +1,7 @@
 from .agent import ControlAgent
 from .models.model_4r2c import ThermalModel4R2C
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 class BuildingTestcase:
@@ -92,3 +94,76 @@ class BuildingTestcase:
 
         # Models
         self.thermal_model.reset()
+
+    def plot_data(self, start: int, end: int):
+        """
+        Plot simulation results between two time indices using a 5-row subplot.
+
+        Args:
+            start (int): Start index (inclusive)
+            end (int): End index (exclusive)
+        """
+        if not hasattr(self.thermal_model, "history"):
+            raise RuntimeError(
+                "Thermal model has no recorded history. Did you run the testcase?"
+            )
+
+        hist = self.thermal_model.history
+        idx_range = slice(start, end)
+        x = np.arange(start, end) / 4.0  # convert to hours
+
+        fig, axs = plt.subplots(5, 1, figsize=(6, 10), sharex=True)
+
+        # 1. Outdoor temperature
+        axs[0].plot(
+            x, self.tamb_list[idx_range], label="Outdoor Temp (°C)", color="orange"
+        )
+        axs[0].set_ylabel("Tamb (°C)")
+        axs[0].legend()
+        axs[0].grid(True)
+
+        # 2. Power: AC + non-AC
+        p_ac = np.array(hist.p_ac[idx_range])
+        p_other = np.array(self.pelec_list[idx_range])
+        axs[1].plot(x, p_other + p_ac, label="Total Power (W)", color="purple")
+        axs[1].plot(x, p_ac, label="AC Power (W)", color="red", linestyle="--")
+        axs[1].set_ylabel("Power (W)")
+        axs[1].legend()
+        axs[1].grid(True)
+
+        # 3. Indoor temp with control region and actions
+        axs[2].axhspan(23, 25, color="green", alpha=0.1, label="Comfort Zone")
+        axs[2].plot(x, hist.t_in[idx_range], label="Indoor Temp (°C)", color="black")
+        axs[2].plot(
+            x,
+            hist.t_set[idx_range],
+            label="Setpoint (°C)",
+            color="blue",
+            linestyle="--",
+        )
+        axs[2].axhline(
+            y=self.thermal_model.ac.default_setpoint, color="grey", linestyle=":"
+        )
+        axs[2].set_ylabel("T_in / Setpoint (°C)")
+        axs[2].legend()
+        axs[2].grid(True)
+
+        # 4. CO2 signal
+        axs[3].plot(
+            x, self.co2_list[idx_range], label="Grid CO₂ Intensity", color="brown"
+        )
+        axs[3].set_ylabel("gCO₂/kWh")
+        axs[3].legend()
+        axs[3].grid(True)
+
+        # 5. Price signal
+        axs[4].plot(
+            x, self.price_list[idx_range], label="USEP Price ($/MWh)", color="teal"
+        )
+        axs[4].set_ylabel("Price")
+        axs[4].set_xlabel("Time (hours)")
+        axs[4].legend()
+        axs[4].grid(True)
+
+        plt.tight_layout()
+        plt.show()

@@ -13,7 +13,7 @@
         "f_shading": 0.05,
         "f_elec": 0.80820353141882527,
         "ac_details": {
-            "max_power": 3000.0,
+            "max_power": 5000.0,
             "cop": 4.5,
             "preferred_setpoint": 24.0
         }
